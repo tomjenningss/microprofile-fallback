@@ -166,7 +166,7 @@ Also, point your browser to the **system**  service URL to retrieve the system p
 
 To see the application metrics Log in as the **admin** user, and use **adminpwd** as the password. See the following sample outputs for the **@Fallback** annotated method and the fallback method before a fallback occurs:
 
-`curl -u admin:adminpwd https://localhost:9443/metrics/application`
+`curl -u admin:adminpwd -D - https://localhost:9443/metrics/application`
 
 ````
 # TYPE application:ft_io_openliberty_guides_inventory_inventory_manager_get_invocations_total counter
@@ -203,7 +203,7 @@ After saving re-curl to view the cached version of the properties. The **fallbac
 
 To see that the **system** service is down, point your browser to the **system/properties** URL. You see that the service displays a 503 HTTP response code.
 
-` curl http://localhost:9080/system/properties`
+`curl http://localhost:9080/system/properties`
 
 Go to **metrics/application** to see the following sample outputs for the **@Fallback** annotated method and the fallback method after a fallback occurs:
 
