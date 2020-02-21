@@ -1,6 +1,6 @@
-# Building fault-tolerant microservices with the **@Fallback** annotation
+## Building fault-tolerant microservices with the **@Fallback** annotation
 
-## What you’ll learn
+### What you’ll learn
 
 You will learn how to use MicroProfile (MP) Fault Tolerance to build resilient microservices that reduce the impact from failure and ensure continued operation of services.
 
