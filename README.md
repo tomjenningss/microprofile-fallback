@@ -32,27 +32,51 @@ If you want to dive straight into it, head to **Enable Fault Tolerance** part
 
 The **finish** directory in the root of this guide contains the finished implementation for the application. Give it a try before you proceed with building your own.
 
-To try out the application, first go to the **finish** directory and run the following Maven goal to build the application and deploy it to Open Liberty:
+To try out the application, go to the **finish** directory and run the following Maven goal to build the application and deploy it to Open Liberty:
+
+`cd finish`
 
 `mvn liberty:run`
 
 Access the **inventory** service with a localhost hostname. You see the system properties for this host. When you visit this URL, some of these system properties, such as the OS name and user name, are automatically stored in the inventory.
 
+Open up a new terminal. Click on the window icon in the top right corner of the terminal.
+
 `curl http://localhost:9080/inventory/systems/localhost`
 
 Update the **CustomConfigSource** configuration file.
 
-Navigate to **resources/CustomConfigSource.json** and Change the **io_openliberty_guides_system_inMaintenance* property from  **false** to **true** and save the file.
+Navigate to **resources/CustomConfigSource.json** and Change the **io_openliberty_guides_system_inMaintenance** property from  **false** to **true**.
+
+> [File -> Open] guide-microprofile-fallback/finish/resources 
+
 
 ```json
 {"config_ordinal":500,
 "io_openliberty_guides_system_inMaintenance":false}
 ```
-After you are done checking out the application, stop the Open Liberty server by pressing **CTRL+C** in the shell session where you ran the server. 
+
+Save the file [CMD + S]
+
+The fallback mechanism is triggered because the system service is now in maintenance. You see the cached properties for this localhost.
+
+`curl http://localhost:9080/inventory/systems/localhost`
+
+The folloing output should be:
+
+```
+{"os.name":"Linux","user.name":"theia"}
+```
+
+Once you have finished checking it out, change **io_openliberty_guides_system_inMaintenance** from **false** to **true**
+
+Stop the Open Liberty server by pressing **CTRL+C** in the shell session where you ran the server. 
 
 ## Enabling fault tolerance
 
-Navigate to the **start** directory to begin.
+Navigate to the **start** directory to begin from the **Open Liberty Server Terminal**.
+
+`cd ../start`
 
 Start Open Liberty in development mode, which starts the Open Liberty server and listens for file changes:
 
@@ -76,8 +100,9 @@ The InventoryManager class calls the getProperties() method in the SystemClient.
 
 The **inventory** service is now able to recognize that the **system** service was taken down for maintenance. An IOException is thrown to simulate the **system** service is unavailable. Now, set a fallback method to deal with this failure.
 
-Replace the InventoryManager class.
-src/main/java/io/openliberty/guides/inventory/InventoryManager.java
+Replace the **InventoryManager** class.
+
+> [File -> Open] guide-microprofile-fallback/start/src/main/java/io/openliberty/guides/inventory/InventoryManager.java
 
 ```java
 package io.openliberty.guides.inventory;
@@ -156,7 +181,7 @@ In your spare time you can learn more about MicroProfile Metrics in the [Providi
 
 The Open Liberty server started in **development mode** at the beginning of the guide and all the changes were automatically picked up.
 
-View the the system properties of your local JVM from the **inventory** service:
+Go back to the second terminal window you opened and view the the system properties of your local JVM from the **inventory** service:
 
 `curl http://localhost:9080/inventory/systems/localhost`
 
@@ -166,7 +191,7 @@ Also, point your browser to the **system**  service URL to retrieve the system p
 
 To see the application metrics Log in as the **admin** user, and use **adminpwd** as the password. See the following sample outputs for the **@Fallback** annotated method and the fallback method before a fallback occurs:
 
-`curl -u admin:adminpwd -D - https://localhost:9443/metrics/application`
+`curl -k -u admin:adminpwd -D - https://localhost:9443/metrics/application`
 
 ````
 # TYPE application:ft_io_openliberty_guides_inventory_inventory_manager_get_invocations_total counter
@@ -179,18 +204,18 @@ application:ft_io_openliberty_guides_inventory_inventory_manager_get_fallback_ca
 
 You can test the fault tolerance mechanism of your microservices by dynamically changing the **io_openliberty_guides_system_inMaintenance** property value to true in the **resources/CustomConfigSource.json** file, which turns the **system** service in maintenance.
 
-Update the **configuration.json** file:
+Open the CustomConfigSource configuration file:
 
-> resources/CustomConfigSource.json
+> [File -> Open] guide-microprofile-fallback/start/resources/CustomConfigSource.json
 
 ```json
 {"config_ordinal":500,
 "io_openliberty_guides_system_inMaintenance":false}
 ```
 
-Change the **io_openliberty_guides_system_inMaintenance** property from false to true and save the file.
+Change the **io_openliberty_guides_system_inMaintenance** property from **false** to **true**.
 
-```json
+Save the file [CMD + S]
 
 ```json
 {"config_ordinal":500,
