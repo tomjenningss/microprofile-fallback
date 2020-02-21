@@ -226,3 +226,110 @@ Change the **io_openliberty_guides_system_inMaintenance** property value back to
 {"config_ordinal":500,
 "io_openliberty_guides_system_inMaintenance":false}
 ```
+## Testing the application 
+
+You can test your application manually, but automated tests ensure code quality because they trigger a failure whenever a code change introduces a defect. JUnit and the JAX-RS Client API provide a simple environment for you to write tests.
+
+On the termainl:
+
+> Go to src/test/java/it/io/openliberty/guides/faulttolerance/
+
+Create the **FaultToleranceIT** class
+
+`touch FaultToleranceIT.java`
+
+```java
+package it.io.openliberty.guides.faulttolerance;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import javax.json.JsonObject;
+import javax.ws.rs.client.Client;
+import javax.ws.rs.client.ClientBuilder;
+import javax.ws.rs.core.Response;
+import org.apache.cxf.jaxrs.provider.jsrjsonp.JsrJsonpProvider;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+
+import it.io.openliberty.guides.utils.TestUtils;
+
+public class FaultToleranceIT {
+
+    private Response response;
+    private Client client;
+
+    @BeforeEach
+    public void setup() {
+        client = ClientBuilder.newClient();
+        client.register(JsrJsonpProvider.class);
+    }
+
+    @AfterEach
+    public void teardown() {
+        client.close();
+        response.close();
+    }
+
+    @Test
+    public void testFallbackForGet() throws InterruptedException {
+        response = TestUtils.getResponse(client,
+                                         TestUtils.INVENTORY_LOCALHOST_URL);
+        assertResponse(TestUtils.baseUrl, response);
+        JsonObject obj = response.readEntity(JsonObject.class);
+        int propertiesSize = obj.size();
+        TestUtils.changeSystemProperty(TestUtils.SYSTEM_MAINTENANCE_FALSE,
+                                       TestUtils.SYSTEM_MAINTENANCE_TRUE);
+        Thread.sleep(3000);
+        response = TestUtils.getResponse(client,
+                                         TestUtils.INVENTORY_LOCALHOST_URL);
+        assertResponse(TestUtils.baseUrl, response);
+        obj = response.readEntity(JsonObject.class);
+        int propertiesSizeFallBack = obj.size();
+        assertTrue(propertiesSize > propertiesSizeFallBack,
+                   "The total number of properties from the @Fallback method "
+                 + "is not smaller than the number from the system service"
+                 +  "as expected.");
+        TestUtils.changeSystemProperty(TestUtils.SYSTEM_MAINTENANCE_TRUE,
+                                       TestUtils.SYSTEM_MAINTENANCE_FALSE);
+        Thread.sleep(3000);
+    }
+
+    private void assertResponse(String url, Response response) {
+        assertEquals(200, response.getStatus(), "Incorrect response code from " + url);
+    }
+}
+```
+
+The **@BeforeEach** and **@AfterEach** annotations indicate that this method runs either before or after the other test case. These methods are generally used to perform any setup and teardown tasks. In this case, the setup method creates a JAX-RS client, which makes HTTP requests to the **inventory** service. This client must also be registered with a JSON-P provider to process JSON resources. The teardown method simply destroys this client instance as well as the HTTP responses.
+
+The **testFallbackForGet()** test case sends a request to the **inventory** service to get the systems properties for a hostname before and after the system service becomes unavailable. Then, it asserts outputs from the two requests to ensure that they are different from each other.
+
+The @Test annotation indicates that the method automatically executes when your test class runs.
+
+In addition, a few endpoint tests have been included for you to test the basic functionality of the inventory and system services. If a test failure occurs, then you might have introduced a bug into the code.
+
+### Running the tests
+
+Since you started Open Liberty in development mode at the start of the guide, press the enter/return key to run the tests. You see the following output:
+
+```
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Running it.io.openliberty.guides.faulttolerance.FaultToleranceIT
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 3.517 sec - in it.io.openliberty.guides.faulttolerance.FaultToleranceIT
+Running it.io.openliberty.guides.system.SystemEndpointIT
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.937 sec - in it.io.openliberty.guides.system.SystemEndpointIT
+Running it.io.openliberty.guides.inventory.InventoryEndpointIT
+Tests run: 3, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.396 sec - in it.io.openliberty.guides.inventory.InventoryEndpointIT
+
+Results :
+
+Tests run: 5, Failures: 0, Errors: 0, Skipped: 0
+```
+
+To see if the tests detect a failure, comment out the **changeSystemProperty()** methods in the **FaultToleranceIT.java** file. Rerun the tests to see that a test failure occurs for the **testFallbackForGet()** test case.
+
+When you are done checking out the service, exit development mode by typing q in the shell session where you ran the server, and then press the **enter/return** key.
+
